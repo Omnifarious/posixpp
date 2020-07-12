@@ -3,6 +3,7 @@
 #include <system_error>
 #include <utility>
 #include <stdexcept>
+#include <variant>
 
 namespace posixpp {
 
@@ -10,6 +11,13 @@ namespace priv_ {
 class expected_base {
  public:
    struct err_tag {};  // Just a type to serve as a tag to indicate error value.
+
+   struct err_type {
+      int errval;
+
+      err_type(int e) : errval(e) {}
+      operator int() const { return errval; }
+   };  // Just a type to serve as a tag to indicate error value.
 };
 }
 
@@ -19,49 +27,44 @@ class expected : private priv_::expected_base {
    // Just a type to serve as a tag to indicate error value.
    using priv_::expected_base::err_tag;
 
-   explicit expected(T const &val) : is_err_(false)
-   {
-      new(&val_.val) T(val);
-   }
-   explicit expected(T &&val) : is_err_(false)
-   {
-      new(&val_.val) T(::std::move(val));
-   }
-   explicit expected(err_tag const &, int ec) : is_err_(true)
-   {
-      val_.errval = ec;
-   }
-   ~expected()
-   {
-      if (is_err_) {
-         val_.val.~T();
+   explicit expected(T const &val) : val_{val}
+   {}
+   explicit expected(T &&val) : val_{::std::move(val)}
+   {}
+   explicit expected(err_tag const &, int ec) : val_{err_type{ec}}
+   {}
+
+   [[nodiscard]] T &&result() {
+      if (auto result = ::std::get_if<T>(&val_)) {
+         return ::std::move(*result);
+      } else {
+         auto const &cat = ::std::system_category();
+         throw ::std::system_error(::std::get<err_type>(val_), cat);
       }
    }
 
-   [[nodiscard]] T &result() {  // Returns a reference so you can move from it.
-      if (is_err_) {
-         auto const &cat = ::std::system_category();
-         throw ::std::system_error(val_.errval, cat);
+   [[nodiscard]] T const &result() const {
+      if (auto result = ::std::get_if<T>(&val_)) {
+         return *result;
       } else {
-         return val_.val;
+         auto const &cat = ::std::system_category();
+         throw ::std::system_error(::std::get<err_type>(val_), cat);
       }
    }
 
    void throw_if_error() const {
-      if (is_err_) {
+      if (auto error = ::std::get_if<err_type>(&val_)) {
          auto const &cat = ::std::system_category();
-         throw ::std::system_error(val_.errval, cat);
+         throw ::std::system_error(*error, cat);
       }
    }
 
-   [[nodiscard]] bool has_error() const { return is_err_; }
+   [[nodiscard]] bool has_error() const {
+      return ::std::holds_alternative<err_type>(val_);
+   }
 
    [[nodiscard]] int error() const {
-      if (!is_err_) {
-         throw ::std::runtime_error("Attempt to get non-existent error.");
-      } else {
-         return val_.errval;
-      }
+      return ::std::get<err_type>(val_);
    }
 
    [[nodiscard]] ::std::error_condition error_condition() const {
@@ -69,11 +72,7 @@ class expected : private priv_::expected_base {
    }
 
  private:
-   union {
-      T val;
-      int errval;
-   } val_;
-   bool const is_err_;
+   ::std::variant<T, err_type> val_;
 };
 
 }
