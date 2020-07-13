@@ -1,5 +1,8 @@
 syntax: re
 ^build$
+^\.clang_complete$
+^\.idea$
+^cmake-build-[^/]*$
 
 syntax: glob
 *~
