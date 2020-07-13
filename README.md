@@ -40,8 +40,9 @@ use than it should be for simple mutexes and condition variables.
 IOstreams isn't the best part of C++. But, being able to implement it
 while ignoring C's stdio might make things easier.
 
-Lastly, it would be really nice to have namespaces that aren't chock
-full macro definitions (most of which are just using the preprocessor to
-implement constants). And it would be nice to have names and types for
-various flags passed to various system calls that made it easier to
-write correct programs.
+Lastly, it would be really nice to have a preprocessor namespace that
+isn't chock full macro definitions (most of which are just using the
+preprocessor to implement constants in a throwback to the days before
+C90). And it would be nice to have names and types for various flags
+passed to various system calls that made it easier to write correct
+programs.

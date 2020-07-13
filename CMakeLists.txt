@@ -11,20 +11,20 @@ add_library(posixpp empty.cpp)
 set_property(TARGET posixpp PROPERTY CXX_EXTENSIONS OFF)
 target_compile_features(posixpp PUBLIC cxx_std_17)
 
-add_executable(mytest mytest.cpp)
-set_property(TARGET mytest PROPERTY CXX_EXTENSIONS OFF)
-target_compile_features(mytest PUBLIC cxx_std_17)
-target_link_libraries(mytest Catch2::Catch2 fmt::fmt)
+add_executable(all_tests tests/simplefd.cpp tests/expected.cpp)
+set_property(TARGET all_tests PROPERTY CXX_EXTENSIONS OFF)
+target_compile_features(all_tests PUBLIC cxx_std_17)
+target_link_libraries(all_tests Catch2::Catch2 fmt::fmt)
 
 include(CTest)
 include(ParseAndAddCatchTests)
-ParseAndAddCatchTests(mytest)
+ParseAndAddCatchTests(all_tests)
 
 target_include_directories(
   posixpp PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>/pubincludes"
   )
 target_include_directories(
-  mytest PUBLIC
+  all_tests PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>/pubincludes"
   )
