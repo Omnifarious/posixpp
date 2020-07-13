@@ -1,46 +1,38 @@
 #include <posixpp/fd.h>
 #include <posixpp/expected.h>
-#include <fmt/core.h>
-#include <fmt/format.h>
-#include <filesystem>
-#include <cstdlib>
-#include <string>
+#include "tempdir.h"
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>
 
-template <>
-struct fmt::formatter<::std::filesystem::path>
-        : fmt::formatter<::std::string_view>
+SCENARIO("File descriptor objects can be opened, read from, and written to.",
+         "posixpp::fd")
 {
-   template <typename FormatContext>
-   auto format(::std::filesystem::path const &p, FormatContext &ctx) {
-      ::std::string path = p.string();
-      return ::fmt::formatter<::std::string_view>::format(path, ctx);
-   }
-};
 
-class tempdir {
- public:
-   tempdir() {
-      using ::std::string;
-      namespace fs = ::std::filesystem;
-      auto const tempdir = fs::temp_directory_path();
-      auto dir_template = (tempdir / "posixpp_tests_XXXXXX").native();
+   GIVEN("A new unique temporary directory, "
+         "and a filename withing that directory.")
+   {
+      tempdir testdir;
+      auto fooname = testdir.get_name() / "foo";
 
-      if (auto result = mkdtemp(dir_template.data())) {
-         dirname_ = dir_template;
-         ::fmt::print("dir_template == \"{}\", dirname_ == \"{}\"\n",
-                      dir_template, dirname_);
-      } else {
-         throw ::std::system_error(errno, ::std::system_category(),
-                                   "mkdtemp");
+      WHEN("A file 'foo' is opened with O_CREAT in this directory.") {
+         auto foo{
+                 ::posixpp::fd::open(
+                         fooname.string().c_str(),
+                         O_CREAT | O_WRONLY, 0666).result()
+         };
+
+         THEN("foo.as_fd() is >= 0") {
+            REQUIRE(foo.as_fd() >= 0);
+         } AND_THEN("The C access call shows the file existing "
+                    "and being writeable")
+         {
+            REQUIRE(::access(fooname.string().c_str(), W_OK) == 0);
+         } AND_THEN("foo.write(\"stuff\n\", 6) succeeds and returns 6") {
+            REQUIRE(foo.write("stuff\n", 6).result() == 6);
+         }
       }
    }
-   ::std::filesystem::path const &get_name() { return dirname_; }
-
- private:
-   ::std::filesystem::path dirname_;
-};
+}
 
 #if 0
 int main()
