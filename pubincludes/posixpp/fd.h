@@ -35,43 +35,31 @@ class fd {
 
    static expected<fd> open(char const *pathname, int flags) {
       using ::syscalls::linux::open;
-      return error_cascade(open(pathname, flags, 0));
+      using posixpp::error_cascade;
+      return error_cascade(open(pathname, flags, 0),
+                           [](auto r) { return fd{static_cast<int>(r)}; });
    }
    static expected<fd> open(char const *pathname, int flags, ::mode_t mode) {
       using ::syscalls::linux::open;
-      return error_cascade(open(pathname, flags, mode));
+      using posixpp::error_cascade;
+      return error_cascade(open(pathname, flags, mode),
+                           [](auto r) { return fd{static_cast<int>(r)}; });
    }
 
    expected<::std::size_t> write(char const *buf, ::std::size_t size) {
-      return error_cascade_size(::syscalls::linux::write(fd_, buf, size));
+      using posixpp::error_cascade;
+      return error_cascade(::syscalls::linux::write(fd_, buf, size),
+                           [](auto r) { return static_cast<::std::size_t>(r);});
    }
 
    expected<::std::size_t> read(char *buf, ::std::size_t size) {
-      return error_cascade_size(::syscalls::linux::read(fd_, buf, size));
+      using posixpp::error_cascade;
+      return error_cascade(::syscalls::linux::read(fd_, buf, size),
+                           [](auto r) { return static_cast<::std::size_t>(r);});
    }
 
  private:
    int fd_;
-
-   static expected<fd>
-   error_cascade(::syscalls::linux::expected_t &&result) {
-      if (result.has_error()) {
-         return expected<fd>{expected<fd>::err_tag{}, result.error()};
-      } else {
-         auto fdval = ::std::move(result.result());
-         return expected<fd>{fd{static_cast<int>(fdval)}};
-      }
-   }
-
-   static expected<::std::size_t>
-   error_cascade_size(::syscalls::linux::expected_t &&result) {
-      using cascade_t = expected<::std::size_t>;
-      if (result.has_error()) {
-         return cascade_t{cascade_t::err_tag{}, result.error()};
-      } else {
-         return cascade_t{static_cast<::std::size_t>(result.result())};
-      }
-   }
 };
 
 } // namespace posixpp
