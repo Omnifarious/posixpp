@@ -33,20 +33,3 @@ SCENARIO("File descriptor objects can be opened, read from, and written to.",
       }
    }
 }
-
-#if 0
-int main()
-{
-   using ::fmt::print;
-   tempdir mydir;
-//   auto result = posixpp::fd::open("foo", O_WRONLY|O_CREAT|O_EXCL, 0666);
-//   if (result.has_error()) {
- //     print("Ooopsy!\n");
-  // } else {
-//      auto myfd = result.result();
-//      print("myfd.as_fd() == {:d}\n", myfd.as_fd());
-//      myfd.write("Stuff\n", 6);
-   //}
-   return 0;
-}
-#endif
