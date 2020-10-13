@@ -5,7 +5,7 @@ project (posixpp VERSION 0.1.0.0 LANGUAGES CXX)
 find_package(Catch2 REQUIRED)
 find_package(fmt REQUIRED)
 
-option(BUILD_SHARED_LIBS "Build libNet as a shared library." ON)
+option(BUILD_SHARED_LIBS "Build posixpp as a shared library." ON)
 
 add_library(posixpp empty.cpp)
 set_property(TARGET posixpp PROPERTY CXX_EXTENSIONS OFF)
