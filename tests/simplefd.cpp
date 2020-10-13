@@ -9,7 +9,7 @@ SCENARIO("File descriptor objects can be opened, read from, and written to.",
 {
 
    GIVEN("A new unique temporary directory, "
-         "and a filename withing that directory.")
+         "and a filename within that directory.")
    {
       tempdir testdir;
       auto fooname = testdir.get_name() / "foo";
