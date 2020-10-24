@@ -13,10 +13,10 @@ class expected_base {
  public:
    struct err_tag {};  // Just a type to serve as a tag to indicate error value.
 
-   struct err_type {
+   struct err_t {
       int errval;
 
-      err_type(int e) : errval(e) {}
+      err_t(int e) : errval(e) {}
       operator int() const { return errval; }
    };  // Just a type to serve as a tag to indicate error value.
 };
@@ -37,7 +37,7 @@ class expected : private priv_::expected_base {
    {}
    explicit expected(err_tag const &, int ec)
    requires ::std::movable<T> || ::std::copyable<T>
-           : val_{err_type{ec}}
+           : val_{err_t{ec}}
    {}
 
    [[nodiscard]] T &&result() && requires ::std::movable<T> {
@@ -45,7 +45,7 @@ class expected : private priv_::expected_base {
          return ::std::move(*result);
       } else {
          auto const &cat = ::std::system_category();
-         throw ::std::system_error(::std::get<err_type>(val_), cat);
+         throw ::std::system_error(::std::get<err_t>(val_), cat);
       }
    }
 
@@ -54,23 +54,23 @@ class expected : private priv_::expected_base {
          return *result;
       } else {
          auto const &cat = ::std::system_category();
-         throw ::std::system_error(::std::get<err_type>(val_), cat);
+         throw ::std::system_error(::std::get<err_t>(val_), cat);
       }
    }
 
    void throw_if_error() const {
-      if (auto error = ::std::get_if<err_type>(&val_)) {
+      if (auto error = ::std::get_if<err_t>(&val_)) {
          auto const &cat = ::std::system_category();
          throw ::std::system_error(*error, cat);
       }
    }
 
    [[nodiscard]] bool has_error() const noexcept {
-      return ::std::holds_alternative<err_type>(val_);
+      return ::std::holds_alternative<err_t>(val_);
    }
 
    [[nodiscard]] int error() const {
-      return ::std::get<err_type>(val_);
+      return ::std::get<err_t>(val_);
    }
 
    [[nodiscard]] ::std::error_condition error_condition() const {
@@ -78,7 +78,7 @@ class expected : private priv_::expected_base {
    }
 
  private:
-   ::std::variant<T, err_type> val_;
+   ::std::variant<T, err_t> val_;
 };
 
 //! A value that may be an error, throws if accessed and is an error.
@@ -88,9 +88,9 @@ class expected<void> : private priv_::expected_base {
    using priv_::expected_base::err_tag;
    using result_t = void;
 
-   expected() : err_(err_type{0}) {}
+   expected() : err_(err_t{0}) {}
    explicit expected(err_tag const &, int ec) noexcept
-           : err_{err_type{ec}}
+           : err_{err_t{ec}}
    {}
 
    void result() const {
@@ -117,7 +117,7 @@ class expected<void> : private priv_::expected_base {
    }
 
  private:
-   err_type err_;
+   err_t err_;
 };
 
 //! Call converter with result, or cascade error upward.

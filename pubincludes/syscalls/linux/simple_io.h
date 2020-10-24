@@ -11,6 +11,11 @@ expected_t open(char const *path, int flags, int mode)
    return syscall_expected(call_id::open, path, flags, mode);
 }
 
+expected_t openat(int fd, char const *path, int flags, int mode)
+{
+   return syscall_expected(call_id::openat, fd, path, flags, mode);
+}
+
 expected_t read(int fd, char *data, ::std::int64_t size)
 {
    return syscall_expected(call_id::read, fd, data, size);
