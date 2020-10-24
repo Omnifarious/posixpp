@@ -1,28 +1,28 @@
 # A pure C++ Posix interface #
 
 With this project, I intend to implement many parts of Posix in pure
-C++ without any reliance on libc.
+C++ without any reliance on libc. There are several motivations for this:
 
-Part of the motivation for this is that glibc and pthreads are very
-bloated with features that are rarely used in most programs.
+ 1. glibc and pthreads are very bloated with features that are rarely
+    used in most programs.
+ 2. System calls are not exposed to the C++ optimizer in a useful
+    way. The register stores and loads required to make them work can
+    often be combined with the calculations a program is already doing
+    so that the values mysteriously appear in the registers when needed
+    instead of having to be moved there just before the system call.
+ 3. `errno` is a horrible hack that is a throwback to a single threaded
+    era and a language that could not sensibly return both error
+    conditions and proper return values from the same function. `errno`
+    is the bane of clean error handling, and it requires expensive to
+    access thread local storage to implement.  Error returns should not
+    be global variables.
 
-Another part of the motivation is that system calls are not exposed to
-the C++ optimizer in a useful way.  The register stores and loads
-required to make them work can often be combined with the calculations a
-program is already doing so that the values mysteriously appear in the
-registers when needed instead of having to be moved there just before
-the system call.
 
-To this end, a subgoal is to implement the system call interface for
+For motivation 2 I intend to implement the system call interface for
 many architectures (and potentially many operating systems) as inline
 assembly inside of inline functions.
 
-A third part of the motivation is to eliminate the horrible hack that is
-errno.  Errno is the bane of clean error handling, and it requires
-expensive to access thread local storage to implement.  Error returns
-should not be global variables.
-
-To this end, a simple `expected` type is used for error handling at
+For motivation 3, a simple `expected` type is used for error handling at
 every level of the interface.  This also causes default error handling
 (if you just assume the `expected` object always contains the expected
 value) to throw an exception whenever errors are ignored.  And if you
