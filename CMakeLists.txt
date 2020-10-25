@@ -1,8 +1,10 @@
-cmake_minimum_required (VERSION 3.17)
+cmake_minimum_required (VERSION 3.16)
 
 project (posixpp VERSION 0.1.0.0 LANGUAGES CXX)
 
-find_package(Catch2 REQUIRED)
+add_subdirectory(Catch2)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_LIST_DIR}/Catch2/contrib)
+
 find_package(fmt REQUIRED)
 
 option(BUILD_SHARED_LIBS "Build posixpp as a shared library." ON)
@@ -17,8 +19,8 @@ target_compile_features(all_tests PUBLIC cxx_std_20)
 target_link_libraries(all_tests Catch2::Catch2 fmt::fmt posixpp)
 
 include(CTest)
-include(ParseAndAddCatchTests)
-ParseAndAddCatchTests(all_tests)
+include(Catch)
+catch_discover_tests(all_tests)
 
 target_include_directories(
   posixpp PUBLIC
