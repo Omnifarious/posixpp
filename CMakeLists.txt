@@ -3,7 +3,10 @@ cmake_minimum_required (VERSION 3.16)
 project (posixpp VERSION 0.1.0.0 LANGUAGES CXX)
 
 add_subdirectory(Catch2)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_LIST_DIR}/Catch2/contrib)
+set(CMAKE_MODULE_PATH
+        ${CMAKE_MODULE_PATH}
+        ${CMAKE_CURRENT_LIST_DIR}/Catch2/contrib
+)
 
 find_package(fmt REQUIRED)
 
@@ -12,6 +15,10 @@ option(BUILD_SHARED_LIBS "Build posixpp as a shared library." ON)
 add_library(posixpp empty.cpp)
 set_property(TARGET posixpp PROPERTY CXX_EXTENSIONS OFF)
 target_compile_features(posixpp PUBLIC cxx_std_20)
+target_include_directories(posixpp PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/pubincludes>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
 
 add_executable(all_tests tests/simplefd.cpp tests/expected.cpp tests/tempdir.h)
 set_property(TARGET all_tests PROPERTY CXX_EXTENSIONS OFF)
@@ -22,11 +29,4 @@ include(CTest)
 include(Catch)
 catch_discover_tests(all_tests)
 
-target_include_directories(
-  posixpp PUBLIC
-  "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>/pubincludes"
-  )
-target_include_directories(
-  all_tests PUBLIC
-  "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>/pubincludes"
-  )
+add_library(posixpp::posixpp ALIAS posixpp)
