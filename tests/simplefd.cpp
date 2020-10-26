@@ -15,10 +15,13 @@ SCENARIO("File descriptor objects can be opened, read from, and written to.",
       auto fooname = testdir.get_name() / "foo";
 
       WHEN("A file 'foo' is opened with O_CREAT in this directory.") {
+         using ::posixpp::fd;
+         using ::std::move;
          auto foo{
-                 ::posixpp::fd::open(
+                 move(fd::open(
                          fooname.string().c_str(),
-                         O_CREAT | O_WRONLY, 0666).result()
+                         O_CREAT | O_WRONLY, 0666
+                 ).result())
          };
 
          THEN("foo.as_fd() is >= 0") {

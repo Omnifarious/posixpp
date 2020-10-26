@@ -40,9 +40,9 @@ class expected : private priv_::expected_base {
            : val_{err_t{ec}}
    {}
 
-   [[nodiscard]] T &&result() && requires ::std::movable<T> {
+   [[nodiscard]] T &result() requires ::std::movable<T> {
       if (auto result = ::std::get_if<T>(&val_)) {
-         return ::std::move(*result);
+         return *result;
       } else {
          auto const &cat = ::std::system_category();
          throw ::std::system_error(::std::get<err_t>(val_), cat);
@@ -126,9 +126,14 @@ class expected<void> : private priv_::expected_base {
 /// \param converter a callable that must always succeed and have a simple
 ///        return value.
 template <typename T, typename Converter>
-requires ::std::invocable<Converter, T const &> ||
-        ::std::invocable<Converter, T &&>
-auto error_cascade(expected<T> &&result, Converter const &converter)
+requires ((
+                  ::std::invocable<Converter, T const &> &&
+                  ::std::copyable<T>
+          ) || (
+                  ::std::invocable<Converter, T &&> &&
+                  ::std::movable<T>
+          ))
+auto error_cascade(expected<T> &&result, Converter converter)
 -> expected<decltype(converter(::std::declval<T>()))>
 {
    using ::std::move;
@@ -136,32 +141,14 @@ auto error_cascade(expected<T> &&result, Converter const &converter)
            expected<decltype(converter(::std::declval<T>()))>;
    using errtag = typename outresult_t::err_tag;
    if (result.has_error()) {
-      return outresult_t(errtag{}, move(result).error());
+      return outresult_t(errtag{}, result.error());
    } else {
-      return outresult_t{converter(move(result).result())};
+      if constexpr (::std::is_move_constructible_v<T>) {
+         return outresult_t{converter(move(result.result()))};
+      } else {
+         return outresult_t{converter(result.result())};
+      }
    }
 }
 
-//! Call converter with result, or cascade error upward.
-///
-/// \param result an rvalue result of a call that may return an error.
-/// \param converter a callable that must always succeed and have a simple
-///        return value.
-template <typename T, typename Converter>
-requires ::std::invocable<Converter, T const &> ||
-         ::std::invocable<Converter, T &&>
-auto error_cascade(expected<T> &&result, Converter &converter)
--> expected<decltype(converter(::std::declval<T>()))>
-{
-   using ::std::move;
-   using outresult_t =
-           expected<decltype(converter(::std::declval<T>()))>;
-   using errtag = typename outresult_t::err_tag;
-   if (result.has_error()) {
-      return outresult_t(errtag{}, move(result).error());
-   } else {
-      return outresult_t{converter(move(result).result())};
-   }
-}
-
-}
+} // namespace posixpp
