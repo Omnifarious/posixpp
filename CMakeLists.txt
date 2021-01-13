@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.16)
+cmake_minimum_required (VERSION 3.17)
 
 project (posixpp VERSION 0.1.0.0 LANGUAGES CXX)
 
@@ -20,7 +20,9 @@ target_include_directories(posixpp PUBLIC
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
-add_executable(all_tests tests/simplefd.cpp tests/expected.cpp tests/tempdir.h)
+add_executable(all_tests tests/simplefd.cpp tests/expected.cpp tests/flagset.cpp
+                         tests/tempdir.h
+                         pubincludes/pppbase/flagset.h tests/flagset.cpp)
 set_property(TARGET all_tests PROPERTY CXX_EXTENSIONS OFF)
 target_compile_features(all_tests PUBLIC cxx_std_20)
 target_link_libraries(all_tests Catch2::Catch2 fmt::fmt posixpp)
