@@ -46,3 +46,6 @@ preprocessor to implement constants in a throwback to the days before
 C90). And it would be nice to have names and types for various flags
 passed to various system calls that made it easier to write correct
 programs.
+
+As a side note, I really like Mercurial, and so the canonical repo
+is at OSDN: https://osdn.net/projects/posixpp/scm/hg/posixpp
