@@ -1,15 +1,25 @@
 #include <pppbase/flagset.h>
 #include <catch2/catch.hpp>
 
+class test_flagset : public ::pppbase::specific_flagset_crtp<test_flagset> {
+   using base_t = ::pppbase::specific_flagset_crtp<test_flagset>;
+ public:
+   using bitvec_t = base_t::bitvec_t;
+   constexpr explicit test_flagset(bitvec_t bits = 0) : base_t(bits) {}
+
+   using base_t::getbits;
+};
+
+
 SCENARIO("flagsets support all required operations correctly")
 {
    GIVEN("A three carefully chosen flagsets.")
    {
-      using ::pppbase::flagset;
-      flagset f0;
-      flagset f1{1};
-      flagset f2{2};
-      flagset f3{3};
+      using ::pppbase::flagset_base;
+      test_flagset f0;
+      test_flagset f1{1};
+      test_flagset f2{2};
+      test_flagset f3{3};
 
       WHEN("Each is tested for truth") {
          THEN("f0 is false") {
