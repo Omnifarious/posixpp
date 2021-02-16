@@ -34,6 +34,7 @@ class fd {
    ///@{
    [[nodiscard]] static expected<fd>
    open(char const *pathname, openflags flags) noexcept {
+      // Hard coded the value for AT_FDCWD
       return openat(fd(-100), pathname, flags, modeflags{});
    }
    [[nodiscard]] static expected<fd>
