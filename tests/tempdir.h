@@ -41,7 +41,12 @@ class tempdir {
    ~tempdir() {
       if (!keep_ && (::std::uncaught_exceptions() == 0)) {
          auto rmcmd = "rm -rf " + dirname_.string();
-         ::system(rmcmd.c_str());
+         if (::system(rmcmd.c_str()) != 0) {
+            ::std::clog <<
+                        ::fmt::format("Can't remove \"{}\". The test "
+                                      "left droppings.\n",
+                                      dirname_.string());
+         }
       }
    }
    ::std::filesystem::path const &get_name() { return dirname_; }
