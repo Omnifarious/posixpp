@@ -11,7 +11,7 @@ open_includes = """
 #include <sys/stat.h>
 #include <fcntl.h>
 """
-oflag_re = re.compile("^\s*#\s*define\s+(O_[A-Za-z0-9_]+)\s")
+oflag_re = re.compile("^\s*#\s*define\s+(S_[A-Za-z0-9_]+)\s")
 
 
 def re_replace(items: Iterable[str], regex: re.Pattern,
@@ -25,7 +25,7 @@ def re_replace(items: Iterable[str], regex: re.Pattern,
 def oflag_codegen(m: re.Match) -> str:
     flagname = m.group(1)
     lowername = flagname[2:].lower()
-    return f'print("constexpr const fdflags fdflags::{lowername}{{{{{{}}}}}};".format(strfry({flagname})))'
+    return f'print("constexpr const modeflags modeflags::{lowername}{{{{{{}}}}}};".format(strfry({flagname})))'
 
 
 defs = subprocess.check_output(['gcc', '-dM', '-E', '-x', 'c++', '-'],
@@ -39,5 +39,3 @@ head = f"""{open_includes}
 #define strfry(x) strfry2(x)
 ----------cut here----------"""
 print('\n'.join(itertools.chain((head,), defs)))
-
-

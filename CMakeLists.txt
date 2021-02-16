@@ -24,7 +24,9 @@ add_executable(all_tests
         tests/simplefd.cpp tests/expected.cpp tests/flagset.cpp
         tests/tempdir.h pubincludes/posixpp/fdflags.h
         pubincludes/pppbase/flagset.h tests/flagset.cpp
-        pubincludes/syscalls/linux/x86_64/fdflags.h tests/fdflags.cpp)
+        pubincludes/syscalls/linux/x86_64/fdflags.h tests/fdflags.cpp
+        pubincludes/syscalls/linux/x86_64/modeflags.h
+        pubincludes/posixpp/modeflags.h)
 set_property(TARGET all_tests PROPERTY CXX_EXTENSIONS OFF)
 target_compile_features(all_tests PUBLIC cxx_std_20)
 target_link_libraries(all_tests Catch2::Catch2 fmt::fmt posixpp)

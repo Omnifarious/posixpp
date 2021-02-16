@@ -1,5 +1,7 @@
 #include <posixpp/fd.h>
 #include <posixpp/expected.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include "tempdir.h"
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>
@@ -18,11 +20,12 @@ SCENARIO("File descriptor objects can be opened, read from, and written to.",
          using ::posixpp::fd;
          using ::posixpp::openflags;
          using ::posixpp::fdflags;
+         using ::posixpp::modeflags;
          using ::std::move;
          auto foo{
                  move(fd::open(
                          fooname.string().c_str(),
-                         openflags::creat | fdflags::wronly, 0666
+                         openflags::creat | fdflags::wronly, modeflags::irwall
                  ).result())
          };
 
