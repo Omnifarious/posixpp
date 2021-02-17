@@ -151,4 +151,18 @@ auto error_cascade(expected<T> &&result, Converter converter)
    }
 }
 
+//! Throw away return value, but cascade error upward.
+template <typename T>
+expected<void> error_cascade_void(expected<T> &&result)
+{
+   using outresult_t = expected<void>;
+   using errtag = typename outresult_t::err_tag;
+   if (result.has_error()) {
+      return outresult_t{errtag{}, result.error()};
+   } else {
+      return outresult_t{};
+   }
+}
+
+
 } // namespace posixpp

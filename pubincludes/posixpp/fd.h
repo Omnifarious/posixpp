@@ -10,15 +10,23 @@ namespace posixpp {
 //! A file descriptor and the associated functions
 class fd {
  public:
-   // Usually, you shouldn't use this.
+   //! Avoid using this to create a file descriptor directly from an integer
    explicit constexpr fd(int fdval) noexcept : fd_(fdval) {}
+
+   //! \brief Will call `close` on a seemingly valid file descriptor and ignore
+   //! the return value.
+   //!
+   //! If you care about the return value of `close`, use the `close` method of
+   //! this class.
    ~fd() noexcept {
       using ::syscalls::linux::close;
       if (fd_ >= 0) {
          close(fd_); // Ignore any error return.
       }
    }
+
    fd(fd &&other) noexcept : fd_(other.fd_) { other.fd_ = -1; }
+
    fd &operator =(fd &&other) noexcept {
       using ::syscalls::linux::close;
       if (fd_ >= 0) {
@@ -30,6 +38,25 @@ class fd {
    }
 
    [[nodiscard]] constexpr int as_fd() const noexcept { return fd_; }
+
+   [[nodiscard]] expected<fd> dup() noexcept {
+      using ::syscalls::linux::dup;
+      return error_cascade(dup(fd_), int_to_fd);
+   }
+
+   [[nodiscard]] expected<void> dup2(fd &newfd) noexcept {
+      using ::syscalls::linux::dup2;
+      return error_cascade_void(dup2(fd_, newfd.as_fd()));
+   }
+
+   [[nodiscard]] expected<void> close() noexcept {
+      using ::syscalls::linux::close;
+      auto const tmpfd = fd_;
+      fd_ = -1;
+      return close(tmpfd);
+   }
+
+
 
    ///@{
    [[nodiscard]] static expected<fd>
@@ -58,8 +85,9 @@ class fd {
    {
       using ::syscalls::linux::openat;
       using posixpp::error_cascade;
-      return error_cascade(openat(dirfd.as_fd(), pathname, flags.getbits(), 0),
-                           [](auto r) { return fd{static_cast<int>(r)}; });
+      auto const dfd = dirfd.as_fd();
+      return error_cascade(openat(dfd, pathname, flags.getbits(), 0),
+                           int_to_fd);
    }
    [[nodiscard]] static expected<fd>
    openat(fd const &dirfd, char const *pathname, fdflags flags) noexcept
@@ -77,7 +105,7 @@ class fd {
                                   pathname,
                                   flags.getbits(),
                                   mode.getbits()),
-                           [](auto r) { return fd{static_cast<int>(r)}; });
+                           int_to_fd);
    }
    [[nodiscard]] static expected<fd>
    openat(fd const &dirfd, char const *pathname,
@@ -99,6 +127,11 @@ class fd {
       using posixpp::error_cascade;
       return error_cascade(::syscalls::linux::read(fd_, buf, size),
                            [](auto r) { return static_cast<::std::size_t>(r);});
+   }
+
+ protected:
+   static fd int_to_fd(int fdes) noexcept {
+      return fd{fdes};
    }
 
  private:

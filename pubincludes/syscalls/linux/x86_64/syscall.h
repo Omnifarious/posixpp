@@ -12,17 +12,19 @@ enum class call_id : ::std::uint16_t;
 using val_t = ::std::int64_t;
 
 struct syscall_param {
-   syscall_param(val_t v) : value(v) { }
-   syscall_param(void *v) : value(reinterpret_cast<val_t>(v)) {
+   syscall_param(val_t v) noexcept : value(v) { } // NOLINT
+   // NOLINTNEXTLINE
+   syscall_param(void *v) noexcept : value(reinterpret_cast<val_t>(v)) {
       static_assert(sizeof(void *) == sizeof(val_t));
    }
-   syscall_param(void const *v) : value(reinterpret_cast<val_t>(v)) {
+   // NOLINTNEXTLINE
+   syscall_param(void const *v) noexcept : value(reinterpret_cast<val_t>(v)) {
       static_assert(sizeof(void *) == sizeof(val_t));
    }
    val_t value;
 };
 
-inline val_t do_syscall(call_id callnum)
+inline val_t do_syscall(call_id callnum) noexcept
 {
    val_t retval;
    asm volatile (
@@ -35,7 +37,7 @@ inline val_t do_syscall(call_id callnum)
 }
 
 inline val_t do_syscall(call_id callnum,
-                           syscall_param const &p1)
+                           syscall_param const &p1) noexcept
 {
    val_t retval;
    asm volatile (
@@ -49,7 +51,7 @@ inline val_t do_syscall(call_id callnum,
 
 inline val_t do_syscall(call_id callnum,
                            syscall_param const &p1,
-                           syscall_param const &p2)
+                           syscall_param const &p2) noexcept
 {
    val_t retval;
    asm volatile (
@@ -64,7 +66,7 @@ inline val_t do_syscall(call_id callnum,
 inline val_t do_syscall(call_id callnum,
                            syscall_param const &p1,
                            syscall_param const &p2,
-                           syscall_param const &p3)
+                           syscall_param const &p3) noexcept
 {
    val_t retval;
    asm volatile (
@@ -80,7 +82,7 @@ inline val_t do_syscall(call_id callnum,
                            syscall_param const &p1,
                            syscall_param const &p2,
                            syscall_param const &p3,
-                           syscall_param const &p4)
+                           syscall_param const &p4) noexcept
 {
    val_t retval;
    register val_t rp4 asm ("r10") = p4.value;
@@ -98,7 +100,7 @@ inline val_t do_syscall(call_id callnum,
                            syscall_param const &p2,
                            syscall_param const &p3,
                            syscall_param const &p4,
-                           syscall_param const &p5)
+                           syscall_param const &p5) noexcept
 {
    val_t retval;
    register volatile val_t rp4 asm ("r10") = p4.value;
@@ -118,7 +120,7 @@ inline val_t do_syscall(call_id callnum,
                            syscall_param const &p3,
                            syscall_param const &p4,
                            syscall_param const &p5,
-                           syscall_param const &p6)
+                           syscall_param const &p6) noexcept
 {
    val_t retval;
    register volatile val_t rp4 asm ("r10") = p4.value;
@@ -138,7 +140,7 @@ using expected_t = ::posixpp::expected<val_t>;
 
 template <typename... T>
 expected_t
-syscall_expected(call_id callnum, T &&... args)
+syscall_expected(call_id callnum, T &&... args) noexcept
 {
    val_t result = do_syscall(callnum, ::std::forward<T>(args)...);
 
