@@ -10,8 +10,11 @@ namespace posixpp {
 //! A file descriptor and the associated functions
 class fd {
  public:
-   //! Avoid using this to create a file descriptor directly from an integer
+   //! Avoid using this to create a file descriptor directly from an integer.
    explicit constexpr fd(int fdval) noexcept : fd_(fdval) {}
+
+   //! Create an invalid file descriptor.
+   constexpr fd() noexcept : fd_(-1) {}
 
    //! \brief Will call `close` on a seemingly valid file descriptor and ignore
    //! the return value.
@@ -27,6 +30,8 @@ class fd {
 
    fd(fd &&other) noexcept : fd_(other.fd_) { other.fd_ = -1; }
 
+   //! \brief Will call `close` on the destination if the file descriptor
+   //! looks valid, and it will ignore the return value.
    fd &operator =(fd &&other) noexcept {
       using ::syscalls::linux::close;
       if (fd_ >= 0) {
@@ -37,25 +42,48 @@ class fd {
       return *this;
    }
 
+   //! A true return value is maybe, a false return is definite.
+   [[nodiscard]] constexpr bool is_valid() const noexcept {
+      return fd_ >= 0;
+   }
+
+   //! Avoid if at all possible, just like constructor.
    [[nodiscard]] constexpr int as_fd() const noexcept { return fd_; }
 
-   [[nodiscard]] expected<fd> dup() noexcept {
+   //! See man page dup(2)
+   [[nodiscard]] expected<fd> dup() const noexcept {
       using ::syscalls::linux::dup;
       return error_cascade(dup(fd_), int_to_fd);
    }
 
-   [[nodiscard]] expected<void> dup2(fd &newfd) noexcept {
+   //! See man page dup2(2)
+   [[nodiscard]] expected<void> dup2(fd &newfd) const noexcept {
       using ::syscalls::linux::dup2;
       return error_cascade_void(dup2(fd_, newfd.as_fd()));
    }
 
+   expected<::std::size_t>
+   write(char const *buf, ::std::size_t size) const noexcept {
+      using posixpp::error_cascade;
+      return error_cascade(::syscalls::linux::write(fd_, buf, size),
+                           [](auto r) { return static_cast<::std::size_t>(r);});
+   }
+
+   expected<::std::size_t>
+   read(char *buf, ::std::size_t size) const noexcept {
+      using posixpp::error_cascade;
+      return error_cascade(::syscalls::linux::read(fd_, buf, size),
+                           [](auto r) { return static_cast<::std::size_t>(r);});
+   }
+
+   //! \brief Sets fd to invalid value and also calls close regardless of
+   //! whether fd is currently an invalid value.
    [[nodiscard]] expected<void> close() noexcept {
       using ::syscalls::linux::close;
       auto const tmpfd = fd_;
       fd_ = -1;
       return close(tmpfd);
    }
-
 
 
    ///@{
@@ -114,20 +142,6 @@ class fd {
       return openat(dirfd, pathname, openflags{flags}, mode);
    }
    ///@}
-
-   expected<::std::size_t>
-   write(char const *buf, ::std::size_t size) const noexcept {
-      using posixpp::error_cascade;
-      return error_cascade(::syscalls::linux::write(fd_, buf, size),
-                           [](auto r) { return static_cast<::std::size_t>(r);});
-   }
-
-   expected<::std::size_t>
-   read(char *buf, ::std::size_t size) const noexcept {
-      using posixpp::error_cascade;
-      return error_cascade(::syscalls::linux::read(fd_, buf, size),
-                           [](auto r) { return static_cast<::std::size_t>(r);});
-   }
 
  protected:
    static fd int_to_fd(int fdes) noexcept {
