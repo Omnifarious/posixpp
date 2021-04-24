@@ -11,8 +11,8 @@ SCENARIO( "expected holds results and throws exceptions", "[expected]" ) {
          CHECK( result.has_error() == false );
       } THEN(" result.throw_if_error() does nothing ") {
          CHECK_NOTHROW(result.throw_if_error());
-      } THEN(" result.error() throws bad_variant_access ") {
-         CHECK_THROWS_AS(result.error(), ::std::bad_variant_access);
+      } THEN(" result.error() throws no_error_here ") {
+         CHECK_THROWS_AS(result.error(), ::posixpp::no_error_here);
       }
    }
    GIVEN("An expectedd<int> result initialized as an error with ENOENT") {

@@ -3,7 +3,6 @@
 #include <system_error>
 #include <utility>
 #include <stdexcept>
-#include <variant>
 #include <concepts>
 
 namespace posixpp {
@@ -12,15 +11,36 @@ namespace priv_ {
 class expected_base {
  public:
    struct err_tag {};  // Just a type to serve as a tag to indicate error value.
-
+/*
    struct err_t {
       int errval;
 
       err_t(int e) : errval(e) {}
       operator int() const { return errval; }
    };  // Just a type to serve as a tag to indicate error value.
+*/
 };
+
 }
+
+
+class no_error_here : public ::std::exception
+{
+ public:
+   no_error_here() noexcept { }
+
+   char const *what() const noexcept override
+   {
+      return reason_;
+   }
+
+ private:
+    no_error_here(char const *reason) noexcept : reason_(reason) { }
+
+    // Must point to a string with static storage duration:
+    char const *reason_ = "no error in expected when error requested";
+};
+
 
 //! A value that may be an error, throws if accessed and is an error.
 template <typename T>
@@ -30,47 +50,57 @@ class expected : private priv_::expected_base {
    using priv_::expected_base::err_tag;
    using result_t = T;
 
-   explicit expected(T const &val) requires ::std::copyable<T> : val_{val}
+   explicit constexpr expected(T const &val) noexcept requires ::std::copyable<T>
+           : val_{val}, has_error_{false}
    {}
-   explicit expected(T &&val) requires ::std::movable<T>
-           : val_{::std::move(val)}
+   explicit constexpr expected(T &&val) noexcept requires ::std::movable<T>
+           : val_{::std::move(val)}, has_error_{false}
    {}
-   explicit expected(err_tag const &, int ec)
+   explicit constexpr expected(err_tag const &, int ec) noexcept
    requires ::std::movable<T> || ::std::copyable<T>
-           : val_{err_t{ec}}
+           : val_{.errcode_ = ec}, has_error_{true}
    {}
-
-   [[nodiscard]] T &result() requires ::std::movable<T> {
-      if (auto result = ::std::get_if<T>(&val_)) {
-         return *result;
-      } else {
-         auto const &cat = ::std::system_category();
-         throw ::std::system_error(::std::get<err_t>(val_), cat);
+   constexpr ~expected() noexcept {
+      if (!has_error_) {
+         val_.value_.~T();
       }
    }
 
-   [[nodiscard]] T const &result() const requires ::std::copyable<T> {
-      if (auto result = ::std::get_if<T>(&val_)) {
-         return *result;
+   [[nodiscard]] constexpr T &&result() requires ::std::movable<T> {
+      if (!has_error_) {
+         return ::std::move(val_.value_);
       } else {
          auto const &cat = ::std::system_category();
-         throw ::std::system_error(::std::get<err_t>(val_), cat);
+         throw ::std::system_error(val_.errcode_, cat);
+      }
+   }
+
+   [[nodiscard]] constexpr T const &result() const requires ::std::copyable<T> {
+      if (!has_error_) {
+         return val_.value_;
+      } else {
+         auto const &cat = ::std::system_category();
+         throw ::std::system_error(val_.value_, cat);
       }
    }
 
    void throw_if_error() const {
-      if (auto error = ::std::get_if<err_t>(&val_)) {
+      if (has_error_) {
          auto const &cat = ::std::system_category();
-         throw ::std::system_error(*error, cat);
+         throw ::std::system_error(val_.errcode_, cat);
       }
    }
 
-   [[nodiscard]] bool has_error() const noexcept {
-      return ::std::holds_alternative<err_t>(val_);
+   [[nodiscard]] constexpr bool has_error() const noexcept {
+      return has_error_;
    }
 
-   [[nodiscard]] int error() const {
-      return ::std::get<err_t>(val_);
+   [[nodiscard]] constexpr int error() const {
+      if (has_error_) {
+         return val_.errcode_;
+      } else {
+         throw no_error_here{};
+      }
    }
 
    [[nodiscard]] ::std::error_condition error_condition() const {
@@ -78,7 +108,13 @@ class expected : private priv_::expected_base {
    }
 
  private:
-   ::std::variant<T, err_t> val_;
+   union anonymous {
+      T value_;
+      int errcode_;
+
+      ~anonymous() {} // Destruction handled by expected<T>
+   } val_;
+   bool has_error_;
 };
 
 //! A value that may be an error, throws if accessed and is an error.
@@ -88,28 +124,32 @@ class expected<void> : private priv_::expected_base {
    using priv_::expected_base::err_tag;
    using result_t = void;
 
-   expected() : err_(err_t{0}) {}
-   explicit expected(err_tag const &, int ec) noexcept
-           : err_{err_t{ec}}
+   expected() : errcode_{0} {}
+   constexpr explicit expected(int ec) noexcept
+           : errcode_{ec}
    {}
 
    void result() const {
       throw_if_error();
    }
 
-   void throw_if_error() const {
-      if (err_ != 0) {
+   constexpr void throw_if_error() const {
+      if (errcode_ != 0) {
          auto const &cat = ::std::system_category();
-         throw ::std::system_error(err_, cat);
+         throw ::std::system_error(errcode_, cat);
       }
    }
 
-   [[nodiscard]] bool has_error() const noexcept {
-      return err_ != 0;
+   [[nodiscard]] constexpr bool has_error() const noexcept {
+      return errcode_ != 0;
    }
 
-   [[nodiscard]] int error() const noexcept {
-      return err_;
+   [[nodiscard]] constexpr int error() const {
+      if (errcode_ == 0) {
+         return errcode_;
+      } else {
+         throw no_error_here{};
+      }
    }
 
    [[nodiscard]] ::std::error_condition error_condition() const noexcept {
@@ -117,7 +157,7 @@ class expected<void> : private priv_::expected_base {
    }
 
  private:
-   err_t err_;
+   int errcode_;
 };
 
 //! Call converter with result, or cascade error upward.
@@ -158,7 +198,7 @@ expected<void> error_cascade_void(expected<T> &&result)
    using outresult_t = expected<void>;
    using errtag = typename outresult_t::err_tag;
    if (result.has_error()) {
-      return outresult_t{errtag{}, result.error()};
+      return outresult_t{result.error()};
    } else {
       return outresult_t{};
    }
