@@ -31,6 +31,12 @@ set_property(TARGET all_tests PROPERTY CXX_EXTENSIONS OFF)
 target_compile_features(all_tests PUBLIC cxx_std_20)
 target_link_libraries(all_tests Catch2::Catch2 fmt::fmt posixpp)
 
+add_executable(junk
+        tempdevjunk.cpp)
+set_property(TARGET junk PROPERTY CXX_EXTENSIONS OFF)
+target_compile_features(junk PUBLIC cxx_std_20)
+target_link_libraries(junk posixpp)
+
 include(CTest)
 include(Catch)
 catch_discover_tests(all_tests)
