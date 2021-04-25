@@ -80,7 +80,7 @@ class expected : private priv_::expected_base {
          return val_.value_;
       } else {
          auto const &cat = ::std::system_category();
-         throw ::std::system_error(val_.value_, cat);
+         throw ::std::system_error(val_.errcode_, cat);
       }
    }
 
