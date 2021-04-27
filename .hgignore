@@ -3,6 +3,7 @@ syntax: re
 ^\.clang_complete$
 ^\.idea$
 ^cmake-build-[^/]*$
+^savedjunk$
 
 syntax: glob
 *~
