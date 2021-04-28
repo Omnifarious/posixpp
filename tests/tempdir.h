@@ -29,9 +29,9 @@ class tempdir {
 
       if (auto result = mkdtemp(dir_template.data())) {
          dirname_ = dir_template;
-         ::std::clog <<
-            ::fmt::format("dir_template == \"{}\", dirname_ == \"{}\"\n",
-                          dir_template, dirname_);
+         // ::std::clog <<
+         //   ::fmt::format("dir_template == \"{}\", dirname_ == \"{}\"\n",
+         //                 dir_template, dirname_);
       } else {
          throw ::std::system_error(errno, ::std::system_category(),
                                    "mkdtemp");
