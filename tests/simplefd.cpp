@@ -22,15 +22,14 @@ SCENARIO("File descriptor objects can be opened, read from, and written to.",
          using ::posixpp::fdflags;
          using ::posixpp::modeflags;
          using ::std::move;
-         auto foo{
-                 move(fd::open(
-                         fooname.string().c_str(),
-                         openflags::creat | fdflags::wronly, modeflags::irwall
-                 ).result())
+         auto foo{fd::open(
+                     fooname.string().c_str(),
+                     openflags::creat | fdflags::wronly, modeflags::irwall
+                  ).result()
          };
 
-         THEN("foo.as_fd() is >= 0") {
-            REQUIRE(foo.as_fd() >= 0);
+         THEN("foo.is_valid()") {
+            REQUIRE(foo.is_valid());
          } AND_THEN("The C access call shows the file existing "
                     "and being writeable")
          {
