@@ -21,7 +21,7 @@ SCENARIO("File descriptor objects can be opened, read from, and written to.",
       using ::posixpp::modeflags;
       auto foo{
          fd::open(
-              fooname.string().c_str(),
+              fooname.native().c_str(),
               of::creat | fdf::wronly,
               modeflags::irwall
          ).result()
@@ -34,7 +34,7 @@ SCENARIO("File descriptor objects can be opened, read from, and written to.",
               "The C access call shows the file "
               "existing and being readable and writable"
       ) {
-         REQUIRE(::access(fooname.string().c_str(), R_OK | W_OK) == 0);
+         REQUIRE(::access(fooname.native().c_str(), R_OK | W_OK) == 0);
       }
       AND_GIVEN(
               "a small, constant sized message and a small similarly "
@@ -55,7 +55,7 @@ SCENARIO("File descriptor objects can be opened, read from, and written to.",
             REQUIRE_FALSE(close_result.has_error());
             REQUIRE_FALSE(foo.is_valid());
 
-            foo = fd::open(fooname.string().c_str(), fdf::rdonly).result();
+            foo = fd::open(fooname.native().c_str(), fdf::rdonly).result();
             REQUIRE(foo.is_valid());
 
             // Try to read more than was written to make sure we can't read
