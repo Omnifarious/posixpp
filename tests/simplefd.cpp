@@ -67,3 +67,106 @@ SCENARIO("File descriptor objects can be opened, read from, and written to.",
       }
    }
 }
+
+SCENARIO(
+     "File descriptor objects have dup and dup2 methods that work as expected."
+) {
+   GIVEN(
+        "A new opened file foo in a new temporary directory containing "
+        "some known text."
+   ) {
+      tempdir testdir;
+      static const char known_text[] = "This is just some known text.";
+      auto fooname = testdir.get_name() / "foo";
+      using ::posixpp::fd;
+      using of = ::posixpp::openflags;
+      using fdf = ::posixpp::fdflags;
+      using ::posixpp::modeflags;
+      auto foo{
+           fd::open(
+                fooname.native().c_str(),
+                of::creat | fdf::wronly,
+                modeflags::irwall
+           ).result()
+      };
+      // Don't write out the trailing '\0';
+      REQUIRE(foo.write(known_text, sizeof(known_text) - 1).result() == sizeof(known_text) - 1);
+      foo.close().throw_if_error();
+      foo = fd::open(fooname.native().c_str(), fdf::rdonly).result();
+      WHEN("The foo.dup() is called.") {
+         fd bar{ foo.dup().result() };
+
+         THEN("It results in a new valid file descriptor.") {
+            REQUIRE(bar.is_valid());
+            REQUIRE(foo.as_fd() != bar.as_fd());
+         }
+         AND_WHEN("You read one character from it.") {
+            char buf[1];
+            REQUIRE(bar.read(buf, 1).result() == 1);
+            THEN("you read the first character of the known text.") {
+               REQUIRE(buf[0] == known_text[0]);
+            }
+            AND_WHEN("you then read one character from the original fd.") {
+               char buf2[1];
+               REQUIRE(foo.read(buf2, 1).result() == 1);
+               THEN("that character is the second character of the known text.") {
+                  REQUIRE(buf2[0] == known_text[1]);
+               }
+            }
+         }
+      }
+      WHEN("foo.dup2(foo) is called.") {
+         REQUIRE_NOTHROW(foo.dup2(foo).throw_if_error());
+         THEN("foo is still valid") {
+            REQUIRE(foo.is_valid());
+         }
+         THEN( "a byte read from foo is the first byte of known_text") {
+            char buf_foo[1];
+            REQUIRE(foo.read(buf_foo, 1).result() == 1);
+            REQUIRE(buf_foo[0] == known_text[0]);
+         }
+      }
+      AND_GIVEN("Another file descriptor opened on the same file.") {
+         auto foo2{fd::open(fooname.native().c_str(), fdf::rdonly).result()};
+         THEN("It is valid.") {
+            REQUIRE(foo2.is_valid());
+         }
+         WHEN(
+                 "One byte is read from each"
+         ) {
+            // Initialize to 0 to make sure they change when read into.
+            char buf_foo[1] = {};
+            char buf_foo2[1] = {};
+            REQUIRE(foo.read(buf_foo, 1).result() == 1);
+            REQUIRE(foo2.read(buf_foo2, 1).result() == 1);
+            THEN(
+                    "it's the same byte, and the  first byte of the known "
+                    "text, demonstrating that they each refer to a different "
+                    "underlying file descriptor."
+            ) {
+               REQUIRE(buf_foo2[0] == known_text[0]);
+               REQUIRE(buf_foo[0] == buf_foo2[0]);
+            } AND_WHEN("we dup2 the first fd to the second fd") {
+               foo.dup2(foo2).throw_if_error();
+               THEN("foo2 is still valid, and can be closed") {
+                  REQUIRE(foo2.is_valid());
+                  REQUIRE_NOTHROW(foo2.close().throw_if_error());
+               } AND_WHEN ("we then read read a byte from each file.") {
+                  char buff2_foo[1];
+                  char buf2_foo2[1];
+                  REQUIRE(foo.read(buff2_foo, 1).result() == 1);
+                  REQUIRE(foo2.read(buf2_foo2, 1).result() == 1);
+                  THEN(
+                          "then we get the 2nd and 3rd bytes of known "
+                          "text, demonstrating they now refer to the same "
+                          "underlying file descriptor."
+                  ) {
+                     REQUIRE(buff2_foo[0] == known_text[1]);
+                     REQUIRE(buf2_foo2[0] == known_text[2]);
+                  }
+               }
+            }
+         }
+      }
+   }
+}
