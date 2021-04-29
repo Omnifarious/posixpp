@@ -41,5 +41,10 @@ inline expected_t dup2(int oldfd, int newfd) noexcept
    return syscall_expected(call_id::dup2, oldfd, newfd);
 }
 
+inline expected_t dup3(int oldfd, int newfd, int flags) noexcept
+{
+   return syscall_expected(call_id::dup3, oldfd, newfd, flags);
+}
+
 }
 }

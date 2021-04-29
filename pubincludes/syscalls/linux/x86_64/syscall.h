@@ -342,6 +342,7 @@ enum class call_id : ::std::uint16_t {
    unshare,
    epoll_pwait = 281,
    epoll_create1 = 291,
+   dup3 = 292,
    syncfs = 306,
    setns = 308
 };

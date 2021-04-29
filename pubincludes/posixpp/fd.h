@@ -4,6 +4,7 @@
 #include <posixpp/fdflags.h>
 #include <posixpp/modeflags.h>
 #include <syscalls/linux/simple_io.h>
+#include <optional>
 
 namespace posixpp {
 
@@ -56,10 +57,25 @@ class fd {
       return error_cascade(dup(fd_), int_to_fd);
    }
 
-   //! See man page dup2(2)
-   [[nodiscard]] expected<void> dup2(fd &newfd) const noexcept {
+   //! See man page dup2(2) or dup3(2) (if the cloexec flag has a value).
+   [[nodiscard]] expected<void> dup2(
+        fd &newfd,
+        ::std::optional<bool> cloexec=::std::optional<bool>{}
+   ) const noexcept
+   {
       using ::syscalls::linux::dup2;
-      return error_cascade_void(dup2(fd_, newfd.as_fd()));
+      using ::syscalls::linux::dup3;
+      if (!cloexec.has_value()) {
+         return error_cascade_void(dup2(fd_, newfd.fd_));
+      } else {
+         auto const flagval = cloexec.value() ? fdflags::cloexec : fdflags{};
+         // TODO: Write a test case for this, which is hard because it
+         //       requires the 'exec' system call, and that the exec'ed program
+         //       run part of the test.
+         return error_cascade_void(
+              dup3(fd_, newfd.fd_, flagval.getbits())
+         );
+      }
    }
 
    expected<::std::size_t>

@@ -19,6 +19,8 @@ class fdflags :  public pppbase::specific_flagset_crtp<fdflags> {
 
  public:
    friend class openflags;
+   //! Default empty set
+   constexpr fdflags() : base_t{0} {}
 
    static const fdflags accmode;
    static const fdflags tmpfile;
@@ -63,6 +65,9 @@ class openflags : public pppbase::specific_flagset_crtp<openflags> {
    friend base_t;
 
  public:
+   //! Default empty set.
+   constexpr openflags() : base_t{0} {}
+   //! All fdflags are also openflags, but not all openflags are fdflags.
    explicit constexpr openflags(fdflags const &val) : base_t(val.getbits()) {}
 
    static const openflags creat;  //!< O_CREAT
