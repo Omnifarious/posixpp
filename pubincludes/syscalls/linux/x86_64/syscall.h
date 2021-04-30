@@ -321,6 +321,7 @@ enum class call_id : ::std::uint16_t {
    epoll_ctl_old,
    epoll_wait_old,
 
+   exit_group = 231,
    epoll_wait = 232,
    epoll_ctl,
 

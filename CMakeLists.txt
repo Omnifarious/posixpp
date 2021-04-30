@@ -26,7 +26,7 @@ add_executable(all_tests
         pubincludes/pppbase/flagset.h tests/flagset.cpp
         pubincludes/syscalls/linux/x86_64/fdflags.h tests/fdflags.cpp
         pubincludes/syscalls/linux/x86_64/modeflags.h
-        pubincludes/posixpp/modeflags.h)
+        pubincludes/posixpp/modeflags.h pubincludes/syscalls/linux/basic.h pubincludes/posixpp/basic.h)
 set_property(TARGET all_tests PROPERTY CXX_EXTENSIONS OFF)
 target_compile_features(all_tests PUBLIC cxx_std_20)
 target_link_libraries(all_tests Catch2::Catch2 fmt::fmt posixpp)
