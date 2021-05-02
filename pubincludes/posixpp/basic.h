@@ -9,6 +9,11 @@ namespace posixpp {
 
 inline void exit [[noreturn]] (int status)
 {
+   ::syscalls::linux::exit_group(status);
+}
+
+inline void exit_thread [[noreturn]] (int status)
+{
    ::syscalls::linux::exit(status);
 }
 
