@@ -10,15 +10,21 @@ set(CMAKE_MODULE_PATH
 
 find_package(fmt REQUIRED)
 
-option(BUILD_SHARED_LIBS "Build posixpp as a shared library." ON)
-
-add_library(posixpp empty.cpp)
+add_library(posixpp SHARED empty.cpp)
 set_property(TARGET posixpp PROPERTY CXX_EXTENSIONS OFF)
 target_compile_features(posixpp PUBLIC cxx_std_20)
 target_include_directories(posixpp PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/pubincludes>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
+
+add_library(posixpp_static STATIC empty.cpp)
+set_property(TARGET posixpp_static PROPERTY CXX_EXTENSIONS OFF)
+target_compile_features(posixpp_static PUBLIC cxx_std_20)
+target_include_directories(posixpp_static PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/pubincludes>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+        )
 
 add_executable(all_tests
         tests/simplefd.cpp tests/expected.cpp tests/flagset.cpp
@@ -36,6 +42,17 @@ add_executable(junk
 set_property(TARGET junk PROPERTY CXX_EXTENSIONS OFF)
 target_compile_features(junk PUBLIC cxx_std_20)
 target_link_libraries(junk posixpp)
+
+# This currently only works when optimization can eliminate all exception
+# handling code. Exception handling requires C++ runtime support that's not
+# yet implemented as part of this library.
+add_executable(helloworld
+        examples/helloworld.cpp)
+set_property(TARGET helloworld PROPERTY CXX_EXTENSIONS OFF)
+target_compile_features(helloworld PUBLIC cxx_std_20)
+target_link_libraries(helloworld posixpp_static)
+# These are specific to g++. I think they will also work with CLang.
+target_link_options(helloworld PUBLIC -nodefaultlibs -nostartfiles -e main)
 
 include(CTest)
 include(Catch)
