@@ -10,7 +10,7 @@ set(CMAKE_MODULE_PATH
 
 find_package(fmt REQUIRED)
 
-add_library(posixpp SHARED empty.cpp)
+add_library(posixpp SHARED empty.cpp pubincludes/posixpp/simpleio.h)
 set_property(TARGET posixpp PROPERTY CXX_EXTENSIONS OFF)
 target_compile_features(posixpp PUBLIC cxx_std_20)
 target_include_directories(posixpp PUBLIC
@@ -18,7 +18,7 @@ target_include_directories(posixpp PUBLIC
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
-add_library(posixpp_static STATIC empty.cpp)
+add_library(posixpp_static STATIC empty.cpp pubincludes/posixpp/simpleio.h)
 set_property(TARGET posixpp_static PROPERTY CXX_EXTENSIONS OFF)
 target_compile_features(posixpp_static PUBLIC cxx_std_20)
 target_include_directories(posixpp_static PUBLIC
@@ -32,7 +32,7 @@ add_executable(all_tests
         pubincludes/pppbase/flagset.h tests/flagset.cpp
         pubincludes/syscalls/linux/x86_64/fdflags.h tests/fdflags.cpp
         pubincludes/syscalls/linux/x86_64/modeflags.h
-        pubincludes/posixpp/modeflags.h pubincludes/syscalls/linux/basic.h pubincludes/posixpp/basic.h)
+        pubincludes/posixpp/modeflags.h pubincludes/syscalls/linux/basic.h pubincludes/posixpp/basic.h pubincludes/posixpp/simpleio.h)
 set_property(TARGET all_tests PROPERTY CXX_EXTENSIONS OFF)
 target_compile_features(all_tests PUBLIC cxx_std_20)
 target_link_libraries(all_tests Catch2::Catch2 fmt::fmt posixpp)

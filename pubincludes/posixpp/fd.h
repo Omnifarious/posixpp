@@ -78,20 +78,6 @@ class fd {
       }
    }
 
-   expected<::std::size_t>
-   write(char const *buf, ::std::size_t size) const noexcept {
-      using posixpp::error_cascade;
-      return error_cascade(::syscalls::linux::write(fd_, buf, size),
-                           [](auto r) { return static_cast<::std::size_t>(r);});
-   }
-
-   expected<::std::size_t>
-   read(char *buf, ::std::size_t size) const noexcept {
-      using posixpp::error_cascade;
-      return error_cascade(::syscalls::linux::read(fd_, buf, size),
-                           [](auto r) { return static_cast<::std::size_t>(r);});
-   }
-
    //! \brief Sets fd to invalid value and also calls close regardless of
    //! whether fd is currently an invalid value.
    [[nodiscard]] expected<void> close() noexcept {
@@ -100,64 +86,6 @@ class fd {
       fd_ = -1;
       return close(tmpfd);
    }
-
-
-   ///@{
-   [[nodiscard]] static expected<fd>
-   open(char const *pathname, openflags flags) noexcept {
-      // Hard coded the value for AT_FDCWD
-      return openat(fd(-100), pathname, flags, modeflags{});
-   }
-   [[nodiscard]] static expected<fd>
-   open(char const *pathname, fdflags flags) noexcept {
-      return open(pathname, openflags{flags});
-   }
-
-   [[nodiscard]] static expected<fd>
-   open(char const *pathname, openflags flags, modeflags mode) noexcept
-   {
-      return openat(fd(-100), pathname, flags, mode);
-   }
-   [[nodiscard]] static expected<fd>
-   open(char const *pathname, fdflags flags, modeflags mode) noexcept
-   {
-      return open(pathname, openflags{flags}, mode);
-   }
-
-   [[nodiscard]] static expected<fd>
-   openat(fd const &dirfd, char const *pathname, openflags flags) noexcept
-   {
-      using ::syscalls::linux::openat;
-      using posixpp::error_cascade;
-      auto const dfd = dirfd.as_fd();
-      return error_cascade(openat(dfd, pathname, flags.getbits(), 0),
-                           int_to_fd);
-   }
-   [[nodiscard]] static expected<fd>
-   openat(fd const &dirfd, char const *pathname, fdflags flags) noexcept
-   {
-      return openat(dirfd, pathname, openflags{flags});
-   }
-
-   [[nodiscard]] static expected<fd>
-   openat(fd const &dirfd, char const *pathname,
-          openflags flags, modeflags mode) noexcept
-   {
-      using ::syscalls::linux::openat;
-      using posixpp::error_cascade;
-      return error_cascade(openat(dirfd.as_fd(),
-                                  pathname,
-                                  flags.getbits(),
-                                  mode.getbits()),
-                           int_to_fd);
-   }
-   [[nodiscard]] static expected<fd>
-   openat(fd const &dirfd, char const *pathname,
-          fdflags flags, modeflags mode) noexcept
-   {
-      return openat(dirfd, pathname, openflags{flags}, mode);
-   }
-   ///@}
 
  protected:
    static fd int_to_fd(int fdes) noexcept {
