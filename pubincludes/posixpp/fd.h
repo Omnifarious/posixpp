@@ -51,13 +51,48 @@ class fd {
    //! Avoid if at all possible, just like constructor.
    [[nodiscard]] constexpr int as_fd() const noexcept { return fd_; }
 
-   //! See man page dup(2)
+   /**
+    * \name Member functions for fd duplication.
+    *
+    * These functions duplicate file descriptors in various ways.  It's
+    * tempting to be clever and have the copy constructor and assignment
+    * operators do this. But I think the semantics are subtly different enough
+    * to make that very confusing.
+    *
+    * In the Posix model, there is an underlying kernel global file handle
+    * list that per-process file handles merely refer to. Most attributes
+    * (like the current file position for reads or writes) are attributes of
+    * this global handle. A very small number (most notably the close on exec
+    * flag) are attributes of the process-level file handle.
+    */
+    //! @{
+   /**
+    * \brief See man page dup(2) - kind of like a copy constructor.
+    *
+    * The two file descriptors both reference the same underlying kernel file
+    * handle, and so share a file pointer and other attributes.
+    */
    [[nodiscard]] expected<fd> dup() const noexcept {
       using ::syscalls::linux::dup;
       return error_cascade(dup(fd_), int_to_fd);
    }
 
-   //! See man page dup2(2) or dup3(2) (if the cloexec flag has a value).
+   /**
+    * See man page dup2(2) or dup3(2) (if the cloexec flag has a value).
+    *
+    * This is sort of like an assignment operator that causes the destination
+    * file descriptor to refer to the same kernel file handle that the original
+    * does.
+    *
+    * @param fd File descriptor to replace. May or may not be already open.  If
+    * already open, it will be closed, before the original file descriptor is
+    * duplicated into it.
+    *
+    * @param cloexec Whether or not the close on exec flag should be set for
+    * the destination file descriptor. Unlike most attributes associated with
+    * a file handle, this flag is per process fd, not per kernel file handle.
+    * This is intended to save a system call to set this flag.
+    */
    [[nodiscard]] expected<void> dup2(
         fd &newfd,
         ::std::optional<bool> cloexec=::std::optional<bool>{}
@@ -77,6 +112,7 @@ class fd {
          );
       }
    }
+   //! @}
 
    //! \brief Sets fd to invalid value and also calls close regardless of
    //! whether fd is currently an invalid value.

@@ -41,7 +41,7 @@ inline openat(fd const &dirfd, char const *pathname,
 
 [[nodiscard]] expected<fd>
 inline open(char const *pathname, openflags flags) noexcept {
-   // Hard coded the value for AT_FDCWD
+   // TODO: Fix hard coded the value for AT_FDCWD
    return openat(fd(-100), pathname, flags, modeflags{});
 }
 [[nodiscard]] expected<fd>
@@ -52,6 +52,7 @@ inline open(char const *pathname, fdflags flags) noexcept {
 [[nodiscard]] expected<fd>
 inline open(char const *pathname, openflags flags, modeflags mode) noexcept
 {
+   // TODO: Fix hard coded the value for AT_FDCWD
    return openat(fd(-100), pathname, flags, mode);
 }
 [[nodiscard]] expected<fd>
