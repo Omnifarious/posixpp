@@ -35,11 +35,12 @@ class fd {
    //! looks valid, and it will ignore the return value.
    fd &operator =(fd &&other) noexcept {
       using ::syscalls::linux::close;
+      int const tmpfd = other.fd_;
+      other.fd_ = -1;
       if (fd_ >= 0) {
          close(fd_); // Ignore any error return.
       }
-      fd_ = other.fd_;
-      other.fd_ = -1;
+      fd_ = tmpfd;
       return *this;
    }
 
