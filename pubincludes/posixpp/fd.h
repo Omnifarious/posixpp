@@ -43,6 +43,15 @@ class fd {
       return *this;
    }
 
+   //! \brief Sets fd to invalid value and also calls close regardless of
+   //! whether fd is currently an invalid value.
+   [[nodiscard]] expected<void> close() noexcept {
+      using ::syscalls::linux::close;
+      auto const tmpfd = fd_;
+      fd_ = -1;
+      return close(tmpfd);
+   }
+
    //! A true return value is maybe, a false return is definite.
    [[nodiscard]] constexpr bool is_valid() const noexcept {
       return fd_ >= 0;
@@ -113,15 +122,6 @@ class fd {
       }
    }
    //! @}
-
-   //! \brief Sets fd to invalid value and also calls close regardless of
-   //! whether fd is currently an invalid value.
-   [[nodiscard]] expected<void> close() noexcept {
-      using ::syscalls::linux::close;
-      auto const tmpfd = fd_;
-      fd_ = -1;
-      return close(tmpfd);
-   }
 
  protected:
    static fd int_to_fd(int fdes) noexcept {
