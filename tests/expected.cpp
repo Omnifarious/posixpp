@@ -4,18 +4,18 @@
 
 class move_detector {
  public:
-   move_detector(move_detector &&other) { other.moved_from_ = true; }
+   move_detector(move_detector &&other) noexcept { other.moved_from_ = true; }
    move_detector(move_detector const &) = default;
    move_detector() = default;
 
-   move_detector &operator =(move_detector &&other) {
+   move_detector &operator =(move_detector &&other) noexcept {
       other.moved_from_ = true;
       return *this;
    }
 
    move_detector &operator =(move_detector const &) = default;
 
-   bool was_moved_from() const { return moved_from_; }
+   [[nodiscard]] bool was_moved_from() const { return moved_from_; }
 
  private:
    bool moved_from_ = false;
@@ -55,7 +55,7 @@ SCENARIO( "expected holds results and throws exceptions", "[expected]" ) {
          CHECK_THROWS_AS(result.error(), ::posixpp::no_error_here);
       }
    }
-   GIVEN("An expectedd<int> result initialized as an error with ENOENT") {
+   GIVEN("An expected<int> result initialized as an error with ENOENT") {
       using expected_t = ::posixpp::expected<int>;
       expected_t const result{expected_t::err_tag{}, ENOENT};
       THEN(" result.result() throws ::std:system_error ") {
@@ -106,11 +106,11 @@ SCENARIO( "expected holds results and throws exceptions", "[expected]" ) {
          CHECK_FALSE(result.result().was_moved_from());
       }
       THEN( " copying the result out doesn't move it.") {
-         move_detector tmp{result.result()};
+         [[maybe_unused]] move_detector tmp{result.result()};
          CHECK_FALSE(result.result().was_moved_from());
       }
       THEN( " returning it from a lambda also doesn't move it.") {
-         auto result2 = [&result]() -> expected_t { return result; }();
+         auto result2 = [&result]() -> expected_t { return result; }(); // NOLINT(performance-no-automatic-move)
          CHECK_FALSE(result.result().was_moved_from());
       }
    }
@@ -119,7 +119,7 @@ SCENARIO( "expected holds results and throws exceptions", "[expected]" ) {
       expected_t result{cant_copy{}};
       THEN(" you can still get the result out.") {
          // This is just a test to see if the code compiles.
-         auto tmp = result.result();
+         [[maybe_unused]] auto tmp = result.result();
       }
    }
 }
