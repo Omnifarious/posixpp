@@ -112,7 +112,7 @@ class expected : private priv_::expected_base {
       T value_;
       int errcode_;
 
-      ~anonymous() {} // Destruction handled by expected<T>
+      constexpr ~anonymous() {} // Destruction handled by expected<T>
    } val_;
    bool has_error_;
 };
