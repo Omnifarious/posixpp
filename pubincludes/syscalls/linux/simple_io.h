@@ -45,4 +45,9 @@ inline expected_t dup3(int oldfd, int newfd, int flags) noexcept
    return syscall_expected(call_id::dup3, oldfd, newfd, flags);
 }
 
+inline expected_t fcntl(int fd, int cmd, void *val) noexcept
+{
+   return syscall_expected(call_id::fcntl, fd, val);
+}
+
 } // namespace syscalls::linux

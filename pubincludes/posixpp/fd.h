@@ -122,6 +122,40 @@ class fd {
          );
       }
    }
+
+   /**
+    * \brief See man page fcntl(2), the section of FD_DUPFD and FD_DUPFD_CLOEXEC.
+    *
+    * Sort of like a copy constructor. Like dup, the new file descriptor created
+    * will refer to the same underlying kernel file handle.
+    *
+    * @param minval The minimum allowed integer value for the new file
+    * descriptor. This, or some greater value will be picked, but whichever
+    * value is picked, it will not have previously referred to any open file.
+    *
+    * @param cloexec Whether or not the close on exec flag should be set on the
+    * new file descriptor.
+    *
+    * @return The new file descriptor, or an error.
+    */
+   [[nodiscard]] expected<fd>
+           dup_to_unused(unsigned int minval, bool cloexec=false) const noexcept
+   {
+      // TODO: Fix hardcoded F_DUPFD and F_DUPFD_CLOEXEC values.
+      static constexpr int F_DUPFD = 0;
+      static constexpr int F_DUPFD_CLOEXEC = 1030;
+      using ::syscalls::linux::fcntl;
+      void * const arg = reinterpret_cast<void *>(minval);
+      if (!cloexec) {
+         return error_cascade(
+                 fcntl(fd_, F_DUPFD, arg), int_to_fd
+         );
+      } else {
+         return error_cascade(
+                 fcntl(fd_, F_DUPFD_CLOEXEC, arg), int_to_fd
+         );
+      }
+   }
    //! @}
 
  protected:
