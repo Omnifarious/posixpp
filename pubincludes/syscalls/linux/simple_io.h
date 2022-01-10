@@ -3,8 +3,7 @@
 #include <cstdint>
 #include <syscalls/linux/syscall.h>
 
-namespace syscalls {
-namespace linux {
+namespace syscalls::linux {
 
 inline expected_t open(char const *path, int flags, int mode) noexcept
 {
@@ -46,5 +45,4 @@ inline expected_t dup3(int oldfd, int newfd, int flags) noexcept
    return syscall_expected(call_id::dup3, oldfd, newfd, flags);
 }
 
-}
-}
+} // namespace syscalls::linux

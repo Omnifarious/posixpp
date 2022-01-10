@@ -4,9 +4,7 @@
 #include <utility>
 #include <posixpp/expected.h>
 
-namespace syscalls {
-namespace linux {
-namespace x86_64 {
+namespace syscalls::linux::x86_64 {
 
 enum class call_id : ::std::uint16_t;
 using val_t = ::std::int64_t;
@@ -359,6 +357,4 @@ inline void compiletime_tests()
 }
 } // namespace priv_
 
-} // namespace x86_64
-} // namespace os_linux
-} // namespace posixpp
+} // namespace syscalls::linux::x86_64

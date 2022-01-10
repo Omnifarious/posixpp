@@ -9,15 +9,13 @@
 #ifdef __x86_64
 #include <syscalls/linux/x86_64/syscall.h>
 
-namespace syscalls {
-namespace linux {
+namespace syscalls::linux {
 
 using x86_64::syscall_expected;
 using x86_64::expected_t;
 using x86_64::call_id;
 
-}
-}
+} // namespace syscalls::linux
 
 #else
 

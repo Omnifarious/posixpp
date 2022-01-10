@@ -5,8 +5,7 @@
 #include <cstdint>
 #include <syscalls/linux/syscall.h>
 
-namespace syscalls {
-namespace linux {
+namespace syscalls::linux {
 
 inline void exit [[noreturn]](int status) noexcept {
    syscall_expected(call_id::exit, status);
@@ -18,5 +17,4 @@ inline void exit_group [[noreturn]](int status) noexcept {
    __builtin_unreachable();
 }
 
-} // namespace linux
-} // namespace syscalls
+} // namespace syscalls::linux

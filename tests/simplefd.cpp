@@ -1,8 +1,6 @@
-#include <algorithm>
 #include <posixpp/fd.h>
 #include <posixpp/expected.h>
 #include <posixpp/simpleio.h>
-#include <fcntl.h>
 #include <unistd.h>
 #include "tempdir.h"
 #define CATCH_CONFIG_MAIN

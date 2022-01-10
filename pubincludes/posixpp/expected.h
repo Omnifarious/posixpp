@@ -27,18 +27,20 @@ class expected_base {
 class no_error_here : public ::std::exception
 {
  public:
-   no_error_here() noexcept { }
+   no_error_here() noexcept = default;
 
+   [[nodiscard]]
    char const *what() const noexcept override
    {
       return reason_;
    }
 
  private:
-    no_error_here(char const *reason) noexcept : reason_(reason) { }
+   explicit
+   no_error_here(char const *reason) noexcept : reason_(reason) { }
 
-    // Must point to a string with static storage duration:
-    char const *reason_ = "no error in expected when error requested";
+   // Must point to a string with static storage duration:
+   char const *reason_ = "no error in expected when error requested";
 };
 
 
