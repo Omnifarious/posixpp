@@ -24,4 +24,3 @@ using x86_64::call_id;
 #error "Only the x86_64 architecture is currently supported."
 
 #endif
-
