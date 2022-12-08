@@ -6,9 +6,15 @@
 
 namespace syscalls::linux::x86_64 {
 
+// An emum class that represents system call numbers.
 enum class call_id : ::std::uint16_t;
+
+// The fundamental type of a system call argument.
 using val_t = ::std::int64_t;
 
+// A wrapper that allows treating pointers and integers interchangeably.
+// There are several comments to prompt the compiler to turn off warnings about
+// bad conversions and use of `reinterpret_cast`.
 struct syscall_param {
    syscall_param(val_t v) noexcept : value(v) { } // NOLINT
    // NOLINTNEXTLINE
@@ -22,6 +28,10 @@ struct syscall_param {
    val_t value;
 };
 
+
+// The full 6 argument system call comments the inline assembly more thoroughly.
+
+// No argument system call (like `getpid`).
 inline val_t do_syscall(call_id callnum) noexcept
 {
    val_t retval;
@@ -34,6 +44,7 @@ inline val_t do_syscall(call_id callnum) noexcept
    return retval;
 }
 
+// Single argument system call.
 inline val_t do_syscall(call_id callnum,
                            syscall_param const &p1) noexcept
 {
@@ -47,6 +58,7 @@ inline val_t do_syscall(call_id callnum,
    return retval;
 }
 
+// Two argument system call.
 inline val_t do_syscall(call_id callnum,
                            syscall_param const &p1,
                            syscall_param const &p2) noexcept
@@ -61,6 +73,7 @@ inline val_t do_syscall(call_id callnum,
    return retval;
 }
 
+// Three argument system call.
 inline val_t do_syscall(call_id callnum,
                            syscall_param const &p1,
                            syscall_param const &p2,
@@ -76,6 +89,7 @@ inline val_t do_syscall(call_id callnum,
    return retval;
 }
 
+// Four argument system call.
 inline val_t do_syscall(call_id callnum,
                            syscall_param const &p1,
                            syscall_param const &p2,
@@ -93,6 +107,7 @@ inline val_t do_syscall(call_id callnum,
    return retval;
 }
 
+// Five argument system call.
 inline val_t do_syscall(call_id callnum,
                            syscall_param const &p1,
                            syscall_param const &p2,
@@ -112,6 +127,7 @@ inline val_t do_syscall(call_id callnum,
    return retval;
 }
 
+// Six argument system call.
 inline val_t do_syscall(call_id callnum,
                            syscall_param const &p1,
                            syscall_param const &p2,
@@ -120,22 +136,55 @@ inline val_t do_syscall(call_id callnum,
                            syscall_param const &p5,
                            syscall_param const &p6) noexcept
 {
+   // Declare this, though when the assembly is inlined, it should just
+   // magically be assigned to the `%rax` register.
    val_t retval;
+
+   // Declare alternate names for various registers and assign them the last few
+   // arguments for the system call.
    register volatile val_t rp4 asm ("r10") = p4.value;
    register volatile val_t rp5 asm ("r8") = p5.value;
    register volatile val_t rp6 asm ("r9") = p6.value;
+
+   // This inline assembly is just a single instruction with lots of hints to
+   // the compiler about how things should be set up before the instruction
+   // executes.  The goal is for the compiler to simply arrange for the
+   // computations leading up to the instruction being emitted simply arrange
+   // for the right values to be in place before it's executed.
    asm volatile (
-      "syscall\n\t"
-      :"=a"(retval)
-      :"a"(static_cast<::std::uint64_t>(callnum)), "D"(p1.value), "S"(p2.value), "d"(p3.value), "r"(rp4), "r"(rp5), "r"(rp6)
+      "syscall\n\t"  // The single instruction
+
+      :"=a"(retval)  // The `%rax` register should be put into `retval` after the
+                     // instruction is executed (i.e. retval will simply end up
+                     // being another name for `%rax`.
+
+       // Declaring various input registers and where they come from.
+      :"a"(static_cast<::std::uint64_t>(callnum)), // %rax contains callnum
+       "D"(p1.value), // %rdi contains p1.value
+       "S"(p2.value), // %rsi contains p2.value
+       "d"(p3.value), // %rdx contains p3.value
+       "r"(rp4), // What rp4 means has already been declared above.
+       "r"(rp5), // What rp5 means has already been declared above.
+       "r"(rp6)  // What rp6 means has already been declared above
+
+       // Declaring what regsiters will no longer have usable values after the
+       // instruction finishes.  Also declaring that the instruction may result
+       // in random places in memory having been changed.
       :"%rcx", "%r11", "memory"
       );
+
+   // This should not result in any instruction being emitted because %rax is
+   // where integer return values are stored in the x86_64 abi anyway.
    return retval;
 }
 
 
+// This is where errno will go now, or the system call result.
 using expected_t = ::posixpp::expected<val_t>;
 
+// This effectively creates 6 new functions that will each call the appropriate
+// `do_syscall` overload. They then check for an error return and set up
+// `::posixpp::expected` in the correct way for an error vs. normal return.
 template <typename... T>
 expected_t
 syscall_expected(call_id callnum, T &&... args) noexcept
@@ -347,6 +396,9 @@ enum class call_id : ::std::uint16_t {
 };
 
 namespace priv_ {
+// Just a bunch of tests to make sure the enum is being set up as expected.
+// Designed to catch people inserting values into the enum without paying
+// attention to how the compiler is assigning integers to the various members.
 inline void compiletime_tests()
 {
    static_assert(static_cast<::std::uint16_t>(call_id::sendfile) == 40);
