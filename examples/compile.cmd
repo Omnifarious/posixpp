@@ -1,1 +1,1 @@
-g++ -std=c++20 -march=native -mtune=native -static -O3 -nostartfiles -nostdlib -I/usr/include/c++/11 -I/home/hopper/src/posixpp/pubincludes -Wl,-emain examples/helloworld.cpp
+g++ -std=c++20 -march=native -mtune=native -static -O3 -nostartfiles -nostdlib -I/usr/include/c++/12 -I/home/hopper/src/posixpp/pubincludes -Wl,-e_start examples/helloworld.cpp examples/x86_64_start.s
